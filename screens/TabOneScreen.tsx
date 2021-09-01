@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState, useCallback, useEffect } from 'react';
 import {
-  StyleSheet, Button, FlatList, ListRenderItem, TextInput,
+  StyleSheet, TouchableOpacity, FlatList, ListRenderItem, TextInput,
 } from 'react-native';
 import Web3 from 'web3';
 // @ts-ignore
@@ -33,18 +33,53 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 20,
     borderWidth: 1,
+    width: 300,
   },
   address: {
+    flex: 0.5,
     height: 40,
     margin: 12,
     padding: 10,
     fontSize: 20,
   },
-
+  ETH: {
+    flex: 1,
+    height: 50,
+    fontSize: 30,
+  },
   listRowContainer: {
-    height: 30,
+    height: 50,
     fontsize: 14,
     flexDirection: 'row',
+  },
+  button: {
+    width: 300,
+    height: 40,
+    backgroundColor: 'blue',
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  buttonText: {
+    fontSize: 18,
+    textAlign: 'center',
+    color: 'white',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  erc20Balance: {
+    fontSize: 22,
+    flex: 1,
+    textAlign: 'right',
+    marginRight: 20,
+  },
+  erc20Symbol: {
+    fontSize: 22,
+    flex: 1,
+    marginLeft: 20,
+    textAlign: 'left',
+  },
+  erc20List: {
+    flex: 2,
   },
 });
 
@@ -66,6 +101,7 @@ export default function TabOneScreen() {
     '0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b',
     '0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea',
     '0xddea378a6ddc8afec82c36e9b0078826bf9e68b6',
+    '0xd92e713d051c37ebb2561803a3b5fbabc4962431',
   ];
 
   const ethEnabled = async () => {
@@ -86,10 +122,6 @@ export default function TabOneScreen() {
       else setAddress(accounts[0]);
     });
   };
-
-  useEffect(() => {
-    getAddress();
-  }, []);
 
   useEffect(() => {
     if (address) {
@@ -136,11 +168,11 @@ export default function TabOneScreen() {
   const renderItem: ListRenderItem<token> = useCallback(
     ({ item }) => (
       <View style={styles.listRowContainer}>
-        <Text>
+        <Text style={styles.erc20Balance}>
           {item.balance / 10 ** item.decimals}
           {' '}
         </Text>
-        <Text>{item.symbol}</Text>
+        <Text style={styles.erc20Symbol}>{item.symbol}</Text>
       </View>
     ),
     [erc20List],
@@ -167,15 +199,20 @@ export default function TabOneScreen() {
         address:
         {address}
       </Text>
-      <Text style={styles.address}>
-        ETH:
+      <Text style={styles.ETH}>
         {ethBalance}
+        {' '}
+        ETH
       </Text>
-      <ERC20View />
+      <View style={styles.erc20List}>
+        <ERC20View />
+      </View>
     </View>
   ) : (
     <View style={styles.container}>
-      <Button title="linked to metamask" onPress={ethEnabled} />
+      <TouchableOpacity onPress={ethEnabled} style={styles.button}>
+        <Text style={styles.buttonText}>link to metamask</Text>
+      </TouchableOpacity>
       <Text>or</Text>
       <TextInput
         style={styles.input}
