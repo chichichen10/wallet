@@ -33,3 +33,10 @@ export type RootTabScreenProps<Screen extends keyof RootTabParamList> = Composit
   BottomTabScreenProps<RootTabParamList, Screen>,
   NativeStackScreenProps<RootStackParamList>
 >;
+
+export interface token {
+  name: string;
+  symbol: string;
+  balance: number;
+  decimals: number;
+}
