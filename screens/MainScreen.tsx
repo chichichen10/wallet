@@ -87,7 +87,7 @@ const erc20Abi = require('erc-20-abi');
 
 declare let window: any;
 
-export default function TabOneScreen() {
+export default function MainScreen() {
   const [address, setAddress] = useState('');
   const [ethBalance, setEthBalance] = useState(0);
   const [erc20List, setErc20List] = useState<token[]>([]);
@@ -95,6 +95,7 @@ export default function TabOneScreen() {
   const [inputAddr, setInputAddr] = useState('');
   const [web3, setWeb3] = useState<Web3>(new Web3(INFURA_API_ENDPOINT));
   const [isInfura, setInfura] = useState(true);
+  const [newToken, setNewToken] = useState('');
   // const web3 = new Web3(INFURA_API_ENDPOINT)
 
   const contractAddresses = [
@@ -189,6 +190,27 @@ export default function TabOneScreen() {
     [isLoading, erc20List],
   );
 
+  const getNewToken = async () => {
+    const list = erc20List;
+    const contract = new web3.eth.Contract(erc20Abi, newToken);
+    const tokenBalance = await contract.methods.balanceOf(address).call();
+    const tokenName = await contract.methods.name().call();
+    const tokenSymbol = await contract.methods.symbol().call();
+    const tokenDecimals = await contract.methods.decimals().call();
+    console.log(`${tokenName} ${tokenBalance / 10 ** tokenDecimals}${tokenSymbol}`);
+    list.push({
+      name: tokenName,
+      balance: tokenBalance,
+      symbol: tokenSymbol,
+      decimals: tokenDecimals,
+    });
+    setErc20List(list);
+  };
+
+  const addToken = useCallback(() => {
+    getNewToken();
+  }, [erc20List, newToken]);
+
   const submitAddress = useCallback(() => {
     setAddress(inputAddr);
   }, [inputAddr]);
@@ -207,6 +229,13 @@ export default function TabOneScreen() {
       <View style={styles.erc20List}>
         <ERC20View />
       </View>
+      <TextInput
+        style={styles.input}
+        placeholder="Add ERC20 token address"
+        value={newToken}
+        onChangeText={setNewToken}
+        onSubmitEditing={addToken}
+      />
     </View>
   ) : (
     <View style={styles.container}>

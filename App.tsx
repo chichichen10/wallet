@@ -1,7 +1,7 @@
 import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import useCachedResources from './hooks/useCachedResources';
-import TabOneScreen from './screens/TabOneScreen';
+import MainScreen from './screens/MainScreen';
 
 export default function App() {
   const isLoadingComplete = useCachedResources();
@@ -10,7 +10,7 @@ export default function App() {
   }
   return (
     <SafeAreaProvider>
-      <TabOneScreen />
+      <MainScreen />
     </SafeAreaProvider>
   );
 }
