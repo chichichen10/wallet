@@ -4,6 +4,7 @@ import {
   StyleSheet, TouchableOpacity, FlatList, ListRenderItem, TextInput,
 } from 'react-native';
 import Web3 from 'web3';
+import AMIS from '@qubic-js/browser';
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved
 import { INFURA_API_ENDPOINT } from '@env';
@@ -117,6 +118,10 @@ export default function MainScreen() {
     return false;
   };
 
+  const qubicConnect = async () => {
+    //  setWeb3(new AMIS.ge);
+  };
+
   const getAddress = async () => {
     await web3.eth.getAccounts((error, accounts) => {
       if (error) console.log('error getting accouts');
@@ -191,7 +196,7 @@ export default function MainScreen() {
   );
 
   const getNewToken = async () => {
-    const list = erc20List;
+    const list: token[] = [];
     const contract = new web3.eth.Contract(erc20Abi, newToken);
     const tokenBalance = await contract.methods.balanceOf(address).call();
     const tokenName = await contract.methods.name().call();
@@ -204,7 +209,7 @@ export default function MainScreen() {
       symbol: tokenSymbol,
       decimals: tokenDecimals,
     });
-    setErc20List(list);
+    setErc20List(erc20List.concat(list));
   };
 
   const addToken = useCallback(() => {
@@ -241,6 +246,9 @@ export default function MainScreen() {
     <View style={styles.container}>
       <TouchableOpacity onPress={ethEnabled} style={styles.button}>
         <Text style={styles.buttonText}>link to metamask</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={ethEnabled} style={styles.button}>
+        <Text style={styles.buttonText}>link to Qubic</Text>
       </TouchableOpacity>
       <Text>or</Text>
       <TextInput
