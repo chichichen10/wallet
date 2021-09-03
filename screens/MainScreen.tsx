@@ -6,8 +6,9 @@ import {
 import Web3 from 'web3';
 import AMIS from '@qubic-js/browser';
 // @ts-ignore
-// eslint-disable-next-line import/no-unresolved
-import { INFURA_API_ENDPOINT } from '@env';
+// eslint-disable-next-line import/no-unresolved, camelcase
+import { INFURA_API_ENDPOINT, Qubic_API_KEY, Qubic_API_SECRET } from '@env';
+// import { Network } from 'web3-net';
 import { Text, View } from '../components/Themed';
 import { token } from '../types';
 import LoadingComponent from '../components/LoadingComponent';
@@ -119,7 +120,9 @@ export default function MainScreen() {
   };
 
   const qubicConnect = async () => {
-    //  setWeb3(new AMIS.ge);
+    const amis = new AMIS(Qubic_API_KEY, Qubic_API_SECRET, 4);
+    await amis.signIn();
+    setWeb3(new Web3(amis.getProvider()));
   };
 
   const getAddress = async () => {
@@ -247,7 +250,7 @@ export default function MainScreen() {
       <TouchableOpacity onPress={ethEnabled} style={styles.button}>
         <Text style={styles.buttonText}>link to metamask</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={ethEnabled} style={styles.button}>
+      <TouchableOpacity onPress={qubicConnect} style={styles.button}>
         <Text style={styles.buttonText}>link to Qubic</Text>
       </TouchableOpacity>
       <Text>or</Text>
