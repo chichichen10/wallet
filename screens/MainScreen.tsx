@@ -48,11 +48,13 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     fontSize: 30,
+    textAlign: 'center',
   },
   listRowContainer: {
     height: 50,
     fontsize: 14,
     flexDirection: 'row',
+    alignItems: 'center',
   },
   button: {
     width: 300,
@@ -73,15 +75,41 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
     marginRight: 20,
+    justifyContent: 'center',
   },
   erc20Symbol: {
     fontSize: 22,
     flex: 1,
     marginLeft: 20,
     textAlign: 'left',
+    justifyContent: 'center',
+  },
+  erc20View: {
+    flex: 2,
+    width: '100%',
+    marginTop: 40,
   },
   erc20List: {
-    flex: 2,
+    width: '80%',
+    borderWidth: 1,
+    alignSelf: 'center',
+  },
+  listHeader: {
+    height: 40,
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: '#3492eb',
+    width: '100%',
+  },
+  headerText: {
+    color: '#fff',
+  },
+  devideLine: { height: 1, backgroundColor: 'skyblue' },
+  top: {
+    flex: 1,
+    marginTop: 20,
+    width: '80%',
+    borderWidth: 1,
   },
 });
 
@@ -120,7 +148,7 @@ export default function MainScreen() {
   };
 
   const qubicConnect = async () => {
-    const amis = new AMIS(Qubic_API_KEY, Qubic_API_SECRET, 4);
+    const amis = new AMIS(Qubic_API_KEY, Qubic_API_SECRET, '4');
     await amis.signIn();
     setWeb3(new Web3(amis.getProvider()));
   };
@@ -175,8 +203,13 @@ export default function MainScreen() {
   }, [web3]);
 
   const renderItem: ListRenderItem<token> = useCallback(
-    ({ item }) => (
-      <View style={styles.listRowContainer}>
+    ({ item, index }) => (
+      <View
+        style={[
+          styles.listRowContainer,
+          { backgroundColor: index % 2 === 0 ? '#f5f3da' : '#f5e2d7' },
+        ]}
+      >
         <Text style={styles.erc20Balance}>
           {item.balance / 10 ** item.decimals}
           {' '}
@@ -187,12 +220,29 @@ export default function MainScreen() {
     [erc20List],
   );
 
+  const ERC20Header = useCallback(
+    () => (
+      <View style={styles.listHeader}>
+        <Text style={styles.headerText}>ERC20 Token List</Text>
+      </View>
+    ),
+    [],
+  );
+
+  const keyExtractor = useCallback((item, index) => index.toString(), []);
+
   const ERC20View = useCallback(
     () => (isLoading ? (
       <LoadingComponent />
     ) : (
       <View>
-        <FlatList data={erc20List} renderItem={renderItem} />
+        <FlatList
+          style={styles.erc20List}
+          data={erc20List}
+          renderItem={renderItem}
+          ListHeaderComponent={ERC20Header}
+          keyExtractor={keyExtractor}
+        />
       </View>
     )),
     [isLoading, erc20List],
@@ -225,16 +275,18 @@ export default function MainScreen() {
 
   return address ? (
     <View style={styles.container}>
-      <Text style={styles.address}>
-        address:
-        {address}
-      </Text>
-      <Text style={styles.ETH}>
-        {ethBalance}
-        {' '}
-        ETH
-      </Text>
-      <View style={styles.erc20List}>
+      <View style={styles.top}>
+        <Text style={styles.address}>
+          address:
+          {address}
+        </Text>
+        <Text style={styles.ETH}>
+          {ethBalance}
+          {' '}
+          ETH
+        </Text>
+      </View>
+      <View style={styles.erc20View}>
         <ERC20View />
       </View>
       <TextInput
