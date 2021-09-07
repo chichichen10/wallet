@@ -1,7 +1,13 @@
+/* eslint-disable global-require */
 import * as React from 'react';
 import { useState, useCallback, useEffect } from 'react';
 import {
-  StyleSheet, TouchableOpacity, FlatList, ListRenderItem, TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  ListRenderItem,
+  TextInput,
+  Image,
 } from 'react-native';
 import Web3 from 'web3';
 import AMIS from '@qubic-js/browser';
@@ -56,12 +62,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  logoContainer: {
+    flexDirection: 'row',
+  },
   button: {
-    width: 300,
-    height: 40,
-    backgroundColor: 'blue',
+    width: 70,
+    height: 70,
     alignItems: 'center',
     flexDirection: 'row',
+    margin: 15,
+  },
+  infoText: {
+    fontSize: 15,
+  },
+  logo: {
+    width: 70,
+    height: 70,
+    resizeMode: 'stretch',
   },
   buttonText: {
     fontSize: 18,
@@ -128,6 +145,8 @@ export default function MainScreen() {
   const [newToken, setNewToken] = useState('');
   // const web3 = new Web3(INFURA_API_ENDPOINT)
 
+  const amis = new AMIS(Qubic_API_KEY, Qubic_API_SECRET, '4');
+
   const contractAddresses = [
     '0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b',
     '0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea',
@@ -148,8 +167,8 @@ export default function MainScreen() {
   };
 
   const qubicConnect = async () => {
-    const amis = new AMIS(Qubic_API_KEY, Qubic_API_SECRET, '4');
     await amis.signIn();
+    setInfura(false);
     setWeb3(new Web3(amis.getProvider()));
   };
 
@@ -263,6 +282,7 @@ export default function MainScreen() {
       decimals: tokenDecimals,
     });
     setErc20List(erc20List.concat(list));
+    setNewToken('');
   };
 
   const addToken = useCallback(() => {
@@ -299,12 +319,15 @@ export default function MainScreen() {
     </View>
   ) : (
     <View style={styles.container}>
-      <TouchableOpacity onPress={ethEnabled} style={styles.button}>
-        <Text style={styles.buttonText}>link to metamask</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={qubicConnect} style={styles.button}>
-        <Text style={styles.buttonText}>link to Qubic</Text>
-      </TouchableOpacity>
+      <Text style={styles.infoText}>Choose your wallet to connect!</Text>
+      <View style={styles.logoContainer}>
+        <TouchableOpacity onPress={ethEnabled} style={styles.button}>
+          <Image source={{ uri: require('../assets/images/metamask.png') }} style={styles.logo} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={qubicConnect} style={styles.button}>
+          <Image source={{ uri: require('../assets/images/qubic.jpeg') }} style={styles.logo} />
+        </TouchableOpacity>
+      </View>
       <Text>or</Text>
       <TextInput
         style={styles.input}
