@@ -43,12 +43,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     width: 300,
   },
+  newTokenInput: {
+    alignItems: 'center',
+    marginBottom: 200,
+  },
   address: {
     flex: 0.5,
     height: 40,
     margin: 12,
     padding: 10,
     fontSize: 20,
+    textAlign: 'center',
   },
   ETH: {
     flex: 1,
@@ -60,6 +65,9 @@ const styles = StyleSheet.create({
     height: 50,
     fontsize: 14,
     flexDirection: 'row',
+    alignItems: 'center',
+  },
+  listFooter: {
     alignItems: 'center',
   },
   logoContainer: {
@@ -143,6 +151,7 @@ export default function MainScreen() {
   const [web3, setWeb3] = useState<Web3>(new Web3(INFURA_API_ENDPOINT));
   const [isInfura, setInfura] = useState(true);
   const [newToken, setNewToken] = useState('');
+  const [isLoadingNewToken, setLoadingNewToken] = useState(false);
   // const web3 = new Web3(INFURA_API_ENDPOINT)
 
   const amis = new AMIS(Qubic_API_KEY, Qubic_API_SECRET, '4');
@@ -248,25 +257,6 @@ export default function MainScreen() {
     [],
   );
 
-  const keyExtractor = useCallback((item, index) => index.toString(), []);
-
-  const ERC20View = useCallback(
-    () => (isLoading ? (
-      <LoadingComponent />
-    ) : (
-      <View>
-        <FlatList
-          style={styles.erc20List}
-          data={erc20List}
-          renderItem={renderItem}
-          ListHeaderComponent={ERC20Header}
-          keyExtractor={keyExtractor}
-        />
-      </View>
-    )),
-    [isLoading, erc20List],
-  );
-
   const getNewToken = async () => {
     const list: token[] = [];
     const contract = new web3.eth.Contract(erc20Abi, newToken);
@@ -283,15 +273,52 @@ export default function MainScreen() {
     });
     setErc20List(erc20List.concat(list));
     setNewToken('');
+    setLoadingNewToken(false);
   };
 
+  const keyExtractor = useCallback((item, index) => index.toString(), []);
+
   const addToken = useCallback(() => {
+    setLoadingNewToken(true);
     getNewToken();
   }, [erc20List, newToken]);
 
   const submitAddress = useCallback(() => {
     setAddress(inputAddr);
   }, [inputAddr]);
+
+  const ERC20Footer = useCallback(
+    () => (isLoadingNewToken ? <LoadingComponent /> : <View />),
+
+    [isLoadingNewToken],
+  );
+
+  const ERC20View = useCallback(
+    () => (isLoading ? (
+      <LoadingComponent />
+    ) : (
+      <View>
+        <FlatList
+          style={styles.erc20List}
+          data={erc20List}
+          renderItem={renderItem}
+          ListHeaderComponent={ERC20Header}
+          keyExtractor={keyExtractor}
+          ListFooterComponent={ERC20Footer}
+        />
+        <View style={styles.newTokenInput}>
+          <TextInput
+            style={styles.input}
+            placeholder="Add ERC20 token address"
+            value={newToken}
+            onChangeText={setNewToken}
+            onSubmitEditing={addToken}
+          />
+        </View>
+      </View>
+    )),
+    [isLoading, erc20List, newToken, isLoadingNewToken],
+  );
 
   return address ? (
     <View style={styles.container}>
@@ -309,13 +336,6 @@ export default function MainScreen() {
       <View style={styles.erc20View}>
         <ERC20View />
       </View>
-      <TextInput
-        style={styles.input}
-        placeholder="Add ERC20 token address"
-        value={newToken}
-        onChangeText={setNewToken}
-        onSubmitEditing={addToken}
-      />
     </View>
   ) : (
     <View style={styles.container}>
