@@ -36,3 +36,9 @@ export interface token {
   balance: number;
   decimals: number;
 }
+
+export interface nft {
+  name: string;
+  image: string;
+  id: number;
+}

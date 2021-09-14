@@ -11,12 +11,13 @@ import {
 } from 'react-native';
 import Web3 from 'web3';
 import AMIS from '@qubic-js/browser';
+import ERC721Data from '@rsksmart/erc721/ERC721Data.json';
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved, camelcase
 import { INFURA_API_ENDPOINT, Qubic_API_KEY, Qubic_API_SECRET } from '@env';
 // import { Network } from 'web3-net';
 import { Text, View } from '../components/Themed';
-import { token } from '../types';
+import { nft, token } from '../types';
 import LoadingComponent from '../components/LoadingComponent';
 // import erc20Abi from '../erc20Abi.json';
 
@@ -136,6 +137,16 @@ const styles = StyleSheet.create({
     width: '80%',
     borderWidth: 1,
   },
+  switch: {
+    flexDirection: 'row',
+    marginTop: 10,
+    borderWidth: 1,
+  },
+  switchOption: {
+    padding: 10,
+    width: 120,
+    textAlign: 'center',
+  },
 });
 
 const erc20Abi = require('erc-20-abi');
@@ -146,13 +157,14 @@ export default function MainScreen() {
   const [address, setAddress] = useState('');
   const [ethBalance, setEthBalance] = useState(0);
   const [erc20List, setErc20List] = useState<token[]>([]);
+  const [erc721List, setErc721List] = useState<nft[]>([]);
   const [isLoading, setLoading] = useState(true);
   const [inputAddr, setInputAddr] = useState('');
   const [web3, setWeb3] = useState<Web3>(new Web3(INFURA_API_ENDPOINT));
   const [isInfura, setInfura] = useState(true);
   const [newToken, setNewToken] = useState('');
   const [isLoadingNewToken, setLoadingNewToken] = useState(false);
-  // const web3 = new Web3(INFURA_API_ENDPOINT)
+  const [tokenType, setTokenType] = useState(20);
 
   const amis = new AMIS(Qubic_API_KEY, Qubic_API_SECRET, '4');
 
@@ -215,6 +227,24 @@ export default function MainScreen() {
           decimals: tokenDecimals,
         });
       }
+      const erc721 = new web3.eth.Contract(
+        // @ts-ignore
+        ERC721Data.abi,
+        '0x64544006cAf4F1A41C58d78c591e79C250656eBf',
+      );
+      const name = await erc721.methods.name().call();
+      const owner = await erc721.methods.ownerOf(0).call();
+      const uri = await erc721.methods.tokenURI(0).call();
+      console.log(`erc721: ${name} owner: ${owner}`);
+      console.log(uri);
+      const nftList: nft[] = [];
+      nftList.push({
+        name,
+        id: 0,
+        image: uri,
+      });
+      setErc721List(nftList);
+
       setErc20List(tokenList);
       setLoading(false);
     }
@@ -243,6 +273,24 @@ export default function MainScreen() {
           {' '}
         </Text>
         <Text style={styles.erc20Symbol}>{item.symbol}</Text>
+      </View>
+    ),
+    [erc20List],
+  );
+
+  const render721Item: ListRenderItem<nft> = useCallback(
+    ({ item, index }) => (
+      <View
+        style={[
+          styles.listRowContainer,
+          { backgroundColor: index % 2 === 0 ? '#f5f3da' : '#f5e2d7' },
+        ]}
+      >
+        <Text style={styles.erc20Balance}>
+          {item.name}
+          {' '}
+        </Text>
+        <Text style={styles.erc20Symbol}>{item.id}</Text>
       </View>
     ),
     [erc20List],
@@ -293,6 +341,8 @@ export default function MainScreen() {
     [isLoadingNewToken],
   );
 
+  const handleSwitch = useCallback((type) => () => setTokenType(type), []);
+
   const ERC20View = useCallback(
     () => (isLoading ? (
       <LoadingComponent />
@@ -320,6 +370,35 @@ export default function MainScreen() {
     [isLoading, erc20List, newToken, isLoadingNewToken],
   );
 
+  const ERC721View = () => (isLoading ? (
+    <LoadingComponent />
+  ) : (
+    <View>
+      <FlatList
+        style={styles.erc20List}
+        data={erc721List}
+        renderItem={render721Item}
+        ListHeaderComponent={ERC20Header}
+        keyExtractor={keyExtractor}
+        ListFooterComponent={ERC20Footer}
+      />
+      <View style={styles.newTokenInput}>
+        <TextInput
+          style={styles.input}
+          placeholder="Add ERC721 token address"
+          value={newToken}
+          onChangeText={setNewToken}
+          onSubmitEditing={addToken}
+        />
+      </View>
+    </View>
+  ));
+
+  const TokenListView = useCallback(
+    () => (tokenType === 20 ? <ERC20View /> : <ERC721View />),
+    [tokenType, isLoading, erc20List, newToken, isLoadingNewToken],
+  );
+
   return address ? (
     <View style={styles.container}>
       <View style={styles.top}>
@@ -333,8 +412,22 @@ export default function MainScreen() {
           ETH
         </Text>
       </View>
+      <View style={styles.switch}>
+        <TouchableOpacity
+          style={[styles.switchOption, { backgroundColor: tokenType === 20 ? '#3492eb' : '#fff' }]}
+          onPress={handleSwitch(20)}
+        >
+          <Text style={{ color: tokenType === 20 ? '#fff' : '#000' }}>ERC20</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.switchOption, { backgroundColor: tokenType === 721 ? '#3492eb' : '#fff' }]}
+          onPress={handleSwitch(721)}
+        >
+          <Text style={{ color: tokenType === 721 ? '#fff' : '#000' }}>ERC721</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.erc20View}>
-        <ERC20View />
+        <TokenListView />
       </View>
     </View>
   ) : (
