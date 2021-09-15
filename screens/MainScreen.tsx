@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Web3 from 'web3';
 import AMIS from '@qubic-js/browser';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import ERC721Data from '@rsksmart/erc721/ERC721Data.json';
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved, camelcase
@@ -126,6 +127,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: '#3492eb',
     width: '100%',
+    justifyContent: 'center',
   },
   headerText: {
     color: '#fff',
@@ -147,6 +149,18 @@ const styles = StyleSheet.create({
     width: 120,
     textAlign: 'center',
   },
+  image: {
+    width: 45,
+    height: 45,
+    justifyContent: 'center',
+    marginLeft: 100,
+  },
+  nftItem: {
+    fontSize: 22,
+    flex: 1,
+    textAlign: 'center',
+    justifyContent: 'center',
+  },
 });
 
 const erc20Abi = require('erc-20-abi');
@@ -165,6 +179,9 @@ export default function MainScreen() {
   const [newToken, setNewToken] = useState('');
   const [isLoadingNewToken, setLoadingNewToken] = useState(false);
   const [tokenType, setTokenType] = useState(20);
+  const [new721Contract, setNew721Contract] = useState('');
+  const [new721id, setNew721id] = useState('');
+  const [isLoadingNewNft, setLoadingNewNft] = useState(false);
 
   const amis = new AMIS(Qubic_API_KEY, Qubic_API_SECRET, '4');
 
@@ -200,6 +217,24 @@ export default function MainScreen() {
     });
   };
 
+  const getERC21List = async () => {
+    const value = await AsyncStorage.getItem('erc721');
+    if (value !== null) {
+      const list: nft[] = JSON.parse(value);
+      const updatedList: nft[] = [];
+      for (let i = 0; i < list.length; i += 1) {
+        console.log(`check ${list[i].contract}`);
+        // @ts-ignore
+        const erc721 = new web3.eth.Contract(ERC721Data.abi, list[i].contract);
+        const owner = await erc721.methods.ownerOf(list[i].id).call();
+        if (owner === address) updatedList.push(list[i]);
+      }
+      setErc721List(updatedList);
+      const jsonValue = JSON.stringify(updatedList);
+      await AsyncStorage.setItem('erc721', jsonValue);
+    }
+  };
+
   useEffect(() => {
     if (address) {
       web3.eth.getBalance(address, (err, balance) => {
@@ -227,24 +262,31 @@ export default function MainScreen() {
           decimals: tokenDecimals,
         });
       }
-      const erc721 = new web3.eth.Contract(
-        // @ts-ignore
-        ERC721Data.abi,
-        '0x64544006cAf4F1A41C58d78c591e79C250656eBf',
-      );
-      const name = await erc721.methods.name().call();
-      const owner = await erc721.methods.ownerOf(0).call();
-      const uri = await erc721.methods.tokenURI(0).call();
-      console.log(`erc721: ${name} owner: ${owner}`);
-      console.log(uri);
-      const nftList: nft[] = [];
-      nftList.push({
-        name,
-        id: 0,
-        image: uri,
-      });
-      setErc721List(nftList);
-
+      // const erc721 = new web3.eth.Contract(
+      //   // @ts-ignore
+      //   ERC721Data.abi,
+      //   '0x64544006cAf4F1A41C58d78c591e79C250656eBf',
+      // );
+      // const name = await erc721.methods.name().call();
+      // const owner = await erc721.methods.ownerOf(0).call();
+      // const uri = await erc721.methods.tokenURI(0).call();
+      // console.log(`erc721: ${name} owner: ${owner}`);
+      // console.log(uri);
+      // const image = await fetch(uri)
+      //   .then((response) => response.json())
+      //   .then((json) => {
+      //     console.log(json.image);
+      //     return json.image;
+      //   });
+      // const nftList: nft[] = [];
+      // nftList.push({
+      //   name,
+      //   id: 0,
+      //   image,
+      //   contract: '0x64544006cAf4F1A41C58d78c591e79C250656eBf',
+      // });
+      // setErc721List(nftList);
+      await getERC21List();
       setErc20List(tokenList);
       setLoading(false);
     }
@@ -286,20 +328,30 @@ export default function MainScreen() {
           { backgroundColor: index % 2 === 0 ? '#f5f3da' : '#f5e2d7' },
         ]}
       >
-        <Text style={styles.erc20Balance}>
+        <Image style={styles.image} source={{ uri: item.image }} />
+        <Text style={styles.nftItem}>
           {item.name}
-          {' '}
+          #
+          {item.id}
         </Text>
-        <Text style={styles.erc20Symbol}>{item.id}</Text>
       </View>
     ),
-    [erc20List],
+    [erc721List],
   );
 
   const ERC20Header = useCallback(
     () => (
       <View style={styles.listHeader}>
         <Text style={styles.headerText}>ERC20 Token List</Text>
+      </View>
+    ),
+    [],
+  );
+
+  const ERC721Header = useCallback(
+    () => (
+      <View style={styles.listHeader}>
+        <Text style={styles.headerText}>ERC721 Token List</Text>
       </View>
     ),
     [],
@@ -324,12 +376,48 @@ export default function MainScreen() {
     setLoadingNewToken(false);
   };
 
+  const getNewNFT = async () => {
+    const list: nft[] = [];
+    // @ts-ignore
+    const erc721 = new web3.eth.Contract(ERC721Data.abi, new721Contract);
+    const name = await erc721.methods.name().call();
+    const owner = await erc721.methods.ownerOf(parseInt(new721id, 10)).call();
+    const uri = await erc721.methods.tokenURI(parseInt(new721id, 10)).call();
+    const image = await fetch(uri)
+      .then((response) => response.json())
+      .then((json) => {
+        console.log(json.image);
+        return json.image;
+      })
+      .catch(() => 'https://drukasia.com/images/stripes/drukair.jpg');
+    console.log(`erc721: ${name} owner: ${owner}`);
+    list.push({
+      name,
+      id: parseInt(new721id, 10),
+      image,
+      contract: new721Contract,
+    });
+    if (owner === address) {
+      const jsonValue = JSON.stringify(erc721List.concat(list));
+      await AsyncStorage.setItem('erc721', jsonValue);
+      setErc721List(erc721List.concat(list));
+    } else alert('Not own by this address!');
+    setNew721Contract('');
+    setNew721id('');
+    setLoadingNewNft(false);
+  };
+
   const keyExtractor = useCallback((item, index) => index.toString(), []);
 
   const addToken = useCallback(() => {
     setLoadingNewToken(true);
     getNewToken();
   }, [erc20List, newToken]);
+
+  const addNft = useCallback(() => {
+    setLoadingNewNft(true);
+    getNewNFT();
+  }, [erc721List, new721Contract, new721id]);
 
   const submitAddress = useCallback(() => {
     setAddress(inputAddr);
@@ -339,6 +427,12 @@ export default function MainScreen() {
     () => (isLoadingNewToken ? <LoadingComponent /> : <View />),
 
     [isLoadingNewToken],
+  );
+
+  const ERC721Footer = useCallback(
+    () => (isLoadingNewNft ? <LoadingComponent /> : <View />),
+
+    [isLoadingNewNft],
   );
 
   const handleSwitch = useCallback((type) => () => setTokenType(type), []);
@@ -378,17 +472,24 @@ export default function MainScreen() {
         style={styles.erc20List}
         data={erc721List}
         renderItem={render721Item}
-        ListHeaderComponent={ERC20Header}
+        ListHeaderComponent={ERC721Header}
         keyExtractor={keyExtractor}
-        ListFooterComponent={ERC20Footer}
+        ListFooterComponent={ERC721Footer}
       />
       <View style={styles.newTokenInput}>
         <TextInput
           style={styles.input}
-          placeholder="Add ERC721 token address"
-          value={newToken}
-          onChangeText={setNewToken}
-          onSubmitEditing={addToken}
+          placeholder="Add ERC721 contract"
+          value={new721Contract}
+          onChangeText={setNew721Contract}
+          onSubmitEditing={addNft}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Add ERC721 id"
+          value={new721id}
+          onChangeText={setNew721id}
+          onSubmitEditing={addNft}
         />
       </View>
     </View>
@@ -396,7 +497,16 @@ export default function MainScreen() {
 
   const TokenListView = useCallback(
     () => (tokenType === 20 ? <ERC20View /> : <ERC721View />),
-    [tokenType, isLoading, erc20List, newToken, isLoadingNewToken],
+    [
+      tokenType,
+      isLoading,
+      erc20List,
+      newToken,
+      isLoadingNewToken,
+      new721id,
+      new721Contract,
+      isLoadingNewNft,
+    ],
   );
 
   return address ? (
