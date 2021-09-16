@@ -1,3 +1,4 @@
+/* eslint-disable no-alert */
 /* eslint-disable global-require */
 import * as React from 'react';
 import { useState, useCallback, useEffect } from 'react';
@@ -65,6 +66,12 @@ const styles = StyleSheet.create({
   },
   listRowContainer: {
     height: 50,
+    fontsize: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  list721Container: {
+    height: 120,
     fontsize: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -150,8 +157,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   image: {
-    width: 45,
-    height: 45,
+    width: 110,
+    height: 110,
     justifyContent: 'center',
     marginLeft: 100,
   },
@@ -218,7 +225,7 @@ export default function MainScreen() {
   };
 
   const getERC21List = async () => {
-    const value = await AsyncStorage.getItem('erc721');
+    const value = await AsyncStorage.getItem(`erc721/${address}`);
     if (value !== null) {
       const list: nft[] = JSON.parse(value);
       const updatedList: nft[] = [];
@@ -231,7 +238,7 @@ export default function MainScreen() {
       }
       setErc721List(updatedList);
       const jsonValue = JSON.stringify(updatedList);
-      await AsyncStorage.setItem('erc721', jsonValue);
+      await AsyncStorage.setItem(`erc721/${address}`, jsonValue);
     }
   };
 
@@ -324,7 +331,7 @@ export default function MainScreen() {
     ({ item, index }) => (
       <View
         style={[
-          styles.listRowContainer,
+          styles.list721Container,
           { backgroundColor: index % 2 === 0 ? '#f5f3da' : '#f5e2d7' },
         ]}
       >
@@ -399,7 +406,7 @@ export default function MainScreen() {
     });
     if (owner === address) {
       const jsonValue = JSON.stringify(erc721List.concat(list));
-      await AsyncStorage.setItem('erc721', jsonValue);
+      await AsyncStorage.setItem(`erc721/${address}`, jsonValue);
       setErc721List(erc721List.concat(list));
     } else alert('Not own by this address!');
     setNew721Contract('');
@@ -464,36 +471,39 @@ export default function MainScreen() {
     [isLoading, erc20List, newToken, isLoadingNewToken],
   );
 
-  const ERC721View = () => (isLoading ? (
-    <LoadingComponent />
-  ) : (
-    <View>
-      <FlatList
-        style={styles.erc20List}
-        data={erc721List}
-        renderItem={render721Item}
-        ListHeaderComponent={ERC721Header}
-        keyExtractor={keyExtractor}
-        ListFooterComponent={ERC721Footer}
-      />
-      <View style={styles.newTokenInput}>
-        <TextInput
-          style={styles.input}
-          placeholder="Add ERC721 contract"
-          value={new721Contract}
-          onChangeText={setNew721Contract}
-          onSubmitEditing={addNft}
+  const ERC721View = useCallback(
+    () => (isLoading ? (
+      <LoadingComponent />
+    ) : (
+      <View>
+        <FlatList
+          style={styles.erc20List}
+          data={erc721List}
+          renderItem={render721Item}
+          ListHeaderComponent={ERC721Header}
+          keyExtractor={keyExtractor}
+          ListFooterComponent={ERC721Footer}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Add ERC721 id"
-          value={new721id}
-          onChangeText={setNew721id}
-          onSubmitEditing={addNft}
-        />
+        <View style={styles.newTokenInput}>
+          <TextInput
+            style={styles.input}
+            placeholder="Add ERC721 contract"
+            value={new721Contract}
+            onChangeText={setNew721Contract}
+            onSubmitEditing={addNft}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Add ERC721 id"
+            value={new721id}
+            onChangeText={setNew721id}
+            onSubmitEditing={addNft}
+          />
+        </View>
       </View>
-    </View>
-  ));
+    )),
+    [isLoadingNewNft, isLoading, erc721List, new721Contract, new721id],
+  );
 
   const TokenListView = useCallback(
     () => (tokenType === 20 ? <ERC20View /> : <ERC721View />),
